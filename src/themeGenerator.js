@@ -64,14 +64,49 @@ const situations = [
 ];
 
 const eras = ["60s", "70s", "80s", "90s", "00s", "2010s"];
+const genres = [
+  "pop",
+  "rock",
+  "soul",
+  "hip hop",
+  "dance",
+  "indie",
+  "punk",
+  "disco",
+  "folk",
+  "R&B",
+  "country",
+  "electronic"
+];
+
+const moments = [
+  "a quiet Sunday morning",
+  "the last song at a wedding",
+  "a train pulling out of the station",
+  "a late-night taxi ride",
+  "a big personal win",
+  "a terrible day turning around",
+  "a sunny walk with nowhere to be",
+  "a packed dancefloor",
+  "a long airport wait",
+  "the end credits of your life"
+];
 
 const templates = [
-  () => `Share a song that makes you feel ${pick(moods)}.`,
-  () => `Share a song for ${pick(situations)}.`,
-  () => `Share one of the best songs from the ${pick(eras)}.`,
-  () => `Share a song from the ${pick(eras)} that still sounds fresh.`,
-  () => `Share a song you would play for someone who needs to feel ${pick(moods)}.`,
-  () => `Share a song that would soundtrack ${pick(situations)}.`
+  ...moods.map((mood) => () => `Share a song that makes you feel ${mood}.`),
+  ...situations.map((situation) => () => `Share a song for ${situation}.`),
+  ...eras.map((era) => () => `Share one of the best songs from the ${era}.`),
+  ...eras.map((era) => () => `Share a song from the ${era} that still sounds fresh.`),
+  ...moods.map(
+    (mood) => () => `Share a song you would play for someone who needs to feel ${mood}.`
+  ),
+  ...situations.map(
+    (situation) => () => `Share a song that would soundtrack ${situation}.`
+  ),
+  ...genres.map((genre) => () => `Share ${articleFor(genre)} ${genre} song everyone should hear.`),
+  ...genres.map((genre) => () => `Share ${articleFor(genre)} ${genre} song that surprised you.`),
+  ...moments.map((moment) => () => `Share a song for ${moment}.`),
+  ...moments.map((moment) => () => `Share a song that sounds like ${moment}.`)
 ];
 
 export async function generateTheme({ now = new Date(), previousThemes = [] } = {}) {
@@ -79,11 +114,7 @@ export async function generateTheme({ now = new Date(), previousThemes = [] } = 
 }
 
 export function generateLocalTheme({ now = new Date(), previousThemes = [] } = {}) {
-  const candidates = [...fixedThemes, ...buildGeneratedThemes()];
-
-  if (isFriday(now)) {
-    candidates.push(...fridayOnlyThemes);
-  }
+  const candidates = buildThemePool(now);
 
   const previous = new Set(previousThemes.map(normalizeForComparison));
   const freshCandidates = candidates.filter(
@@ -94,12 +125,33 @@ export function generateLocalTheme({ now = new Date(), previousThemes = [] } = {
   return pick(pool);
 }
 
+export function generateSampleThemes({ count = 100, now = new Date() } = {}) {
+  const pool = shuffle(buildThemePool(now));
+  const samples = [];
+
+  while (samples.length < count) {
+    samples.push(pool[samples.length % pool.length]);
+  }
+
+  return samples;
+}
+
 export function isWeekendTheme(theme) {
   return /\bweekend\b|\bfriday\b/i.test(theme);
 }
 
 function buildGeneratedThemes() {
   return templates.map((template) => template());
+}
+
+function buildThemePool(now) {
+  const candidates = [...fixedThemes, ...buildGeneratedThemes()];
+
+  if (isFriday(now)) {
+    candidates.push(...fridayOnlyThemes);
+  }
+
+  return candidates;
 }
 
 function isFriday(date) {
@@ -112,4 +164,19 @@ function pick(items) {
 
 function normalizeForComparison(theme) {
   return theme.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+}
+
+function articleFor(word) {
+  return /^[aeiou]/i.test(word) || word === "R&B" ? "an" : "a";
+}
+
+function shuffle(items) {
+  const shuffled = [...items];
+
+  for (let index = shuffled.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1));
+    [shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[index]];
+  }
+
+  return shuffled;
 }

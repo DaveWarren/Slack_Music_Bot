@@ -27,6 +27,12 @@ Post a single theme immediately:
 npm run post-now
 ```
 
+Print 100 sample prompts without posting to Slack:
+
+```sh
+npm run sample-prompts
+```
+
 Run the slash command server:
 
 ```sh
