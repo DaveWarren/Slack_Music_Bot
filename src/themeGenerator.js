@@ -64,6 +64,8 @@ const situations = [
 ];
 
 const eras = ["60s", "70s", "80s", "90s", "00s", "2010s"];
+const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+const albumTrackNumbers = Array.from({ length: 12 }, (_, index) => index + 1);
 const genres = [
   "pop",
   "rock",
@@ -105,8 +107,25 @@ const templates = [
   ),
   ...genres.map((genre) => () => `Share ${articleFor(genre)} ${genre} song everyone should hear.`),
   ...genres.map((genre) => () => `Share ${articleFor(genre)} ${genre} song that surprised you.`),
+  ...albumTrackNumbers.map(
+    (trackNumber) => () =>
+      `Share the best track ${trackNumber} from any album you love.`
+  ),
+  ...letters.map(
+    (letter) => () => `Share the best song you know that starts with ${letter}.`
+  ),
   ...moments.map((moment) => () => `Share a song for ${moment}.`),
-  ...moments.map((moment) => () => `Share a song that sounds like ${moment}.`)
+  ...moments.map((moment) => () => `Share a song that sounds like ${moment}.`),
+  () => "Share the best first song on an album.",
+  () => "Share the best opening track from any album.",
+  () => "Share the best closing track from any album.",
+  () => "Share the best instrumental song you know.",
+  () => "Share the best song you know that has no lyrics.",
+  () => "Share a wordless song that still says everything.",
+  () => "Share the best song with a number in the title.",
+  () => "Share a song with an age in the title.",
+  () => "Share a song with a year in the title.",
+  () => "Share a song with a single digit in the title."
 ];
 
 export async function generateTheme({ now = new Date(), previousThemes = [] } = {}) {
@@ -134,6 +153,10 @@ export function generateSampleThemes({ count = 100, now = new Date() } = {}) {
   }
 
   return samples;
+}
+
+export function getThemePool({ now = new Date() } = {}) {
+  return buildThemePool(now);
 }
 
 export function isWeekendTheme(theme) {

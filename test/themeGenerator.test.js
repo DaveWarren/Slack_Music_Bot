@@ -1,6 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { generateLocalTheme, isWeekendTheme } from "../src/themeGenerator.js";
+import {
+  generateLocalTheme,
+  getThemePool,
+  isWeekendTheme
+} from "../src/themeGenerator.js";
 
 test("generates a local theme", () => {
   const theme = generateLocalTheme({ now: new Date("2026-05-04T09:00:00Z") });
@@ -36,4 +40,20 @@ test("avoids recently used themes when alternatives exist", () => {
 
     assert.notEqual(theme, "Share your running anthem.");
   }
+});
+
+test("includes album track number prompts", () => {
+  const pool = getThemePool({ now: new Date("2026-05-04T09:00:00Z") });
+
+  assert.ok(pool.includes("Share the best first song on an album."));
+  assert.ok(pool.includes("Share the best track 2 from any album you love."));
+  assert.ok(pool.includes("Share the best track 12 from any album you love."));
+});
+
+test("includes letter, instrumental, and number title prompts", () => {
+  const pool = getThemePool({ now: new Date("2026-05-04T09:00:00Z") });
+
+  assert.ok(pool.includes("Share the best song you know that starts with X."));
+  assert.ok(pool.includes("Share the best song you know that has no lyrics."));
+  assert.ok(pool.includes("Share the best song with a number in the title."));
 });
