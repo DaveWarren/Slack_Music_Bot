@@ -1,0 +1,14 @@
+{
+  "name": "slack-music-theme-bot",
+  "version": "1.0.0",
+  "description": "A Slack bot that posts generated music sharing themes on a configurable cadence.",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js",
+    "post-now": "node src/index.js --once",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
