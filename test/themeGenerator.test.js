@@ -82,6 +82,8 @@ test("exposes balanced categories instead of one flat weighted pool", () => {
   assert.equal(byId.letter.count, 26);
   assert.equal(byId.year.weight, 1);
   assert.equal(byId.situation.weight, 3);
+  assert.ok(byId.situation.count >= 90);
+  assert.ok(byId.mood.count >= 70);
 });
 
 test("avoids the most recent category when other categories are available", () => {
