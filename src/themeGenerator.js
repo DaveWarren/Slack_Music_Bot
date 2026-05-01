@@ -1,141 +1,115 @@
-const maxAttempts = 3;
+const fixedThemes = [
+  "Share one of the best songs from the 80s.",
+  "Share a song you think would make a perfect first dance.",
+  "Share a song that gets you out of bed.",
+  "Share a song that makes you happy.",
+  "Share a song for when it is raining.",
+  "Share your running anthem.",
+  "Share your favourite song from when you were a kid.",
+  "Share a cover version that is better than the original.",
+  "Share a song that reminds you of summer.",
+  "Share a song that sounds better played loud.",
+  "Share a song you know every word to.",
+  "Share a song that instantly improves your mood.",
+  "Share a song that belongs on a road trip playlist.",
+  "Share a song with a brilliant opening line.",
+  "Share a song with a bassline you love.",
+  "Share a song that reminds you of school.",
+  "Share a song that feels like a night out.",
+  "Share a song that feels like heading home.",
+  "Share a song you discovered through a film or TV show.",
+  "Share a song you would put on at a party.",
+  "Share a song that makes you nostalgic.",
+  "Share a song with an unforgettable chorus.",
+  "Share a song that deserves more attention.",
+  "Share a song that sounds like pure confidence.",
+  "Share a song you would use as entrance music.",
+  "Share a song with a great guitar riff.",
+  "Share a song that feels like a fresh start.",
+  "Share a song that reminds you of someone important.",
+  "Share a song you loved before it got popular.",
+  "Share a song that should be longer than it is."
+];
 
-export async function generateTheme({ endpoint, apiKey, model, apiVersion, style }) {
-  let lastError;
+const fridayOnlyThemes = [
+  "Share a song for the weekend.",
+  "Share a song that sounds like Friday night.",
+  "Share a song to start the weekend properly."
+];
 
-  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
-    try {
-      const theme = await generateThemeAttempt({
-        endpoint,
-        apiKey,
-        model,
-        apiVersion,
-        style,
-        attempt
-      });
-      if (isUsableTheme(theme)) {
-        return theme;
-      }
+const moods = [
+  "happy",
+  "hopeful",
+  "melancholy",
+  "unstoppable",
+  "calm",
+  "dramatic",
+  "sunny",
+  "restless",
+  "ridiculous",
+  "triumphant"
+];
 
-      lastError = new Error(`Azure AI returned an incomplete theme: ${theme}`);
-    } catch (error) {
-      lastError = error;
-    }
-  }
+const situations = [
+  "walking in the rain",
+  "getting ready to go out",
+  "cooking dinner",
+  "running up a hill",
+  "the first warm day of the year",
+  "a late train home",
+  "cleaning the house",
+  "a long drive",
+  "finishing a hard week",
+  "dancing in the kitchen"
+];
 
-  throw lastError || new Error("Azure AI could not generate a usable theme");
+const eras = ["60s", "70s", "80s", "90s", "00s", "2010s"];
+
+const templates = [
+  () => `Share a song that makes you feel ${pick(moods)}.`,
+  () => `Share a song for ${pick(situations)}.`,
+  () => `Share one of the best songs from the ${pick(eras)}.`,
+  () => `Share a song from the ${pick(eras)} that still sounds fresh.`,
+  () => `Share a song you would play for someone who needs to feel ${pick(moods)}.`,
+  () => `Share a song that would soundtrack ${pick(situations)}.`
+];
+
+export async function generateTheme({ now = new Date(), previousThemes = [] } = {}) {
+  return generateLocalTheme({ now, previousThemes });
 }
 
-async function generateThemeAttempt({ endpoint, apiKey, model, apiVersion, style, attempt }) {
-  const response = await fetch(buildChatCompletionsUrl(endpoint, apiVersion), {
-    method: "POST",
-    headers: {
-      "api-key": apiKey,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      model,
-      messages: [
-        {
-          role: "system",
-          content: [
-            "You write fresh music-sharing themes for a Slack channel.",
-            "Return valid JSON only, with one property named theme.",
-            "The theme must be one complete sentence.",
-            "The sentence must start with Share.",
-            "Do not include markdown, numbering, quotation marks, or a Spotify URL."
-          ].join(" ")
-        },
-        {
-          role: "user",
-          content: [
-            "Generate one original theme asking people to share a Spotify link.",
-            `Style: ${style}.`,
-            "Make it specific, easy to answer, and no more than 24 words.",
-            "Avoid generic openers like 'What's the'.",
-            `Attempt: ${attempt}.`
-          ].join(" ")
-        }
-      ],
-      max_tokens: 120,
-      temperature: 1,
-      response_format: {
-        type: "json_schema",
-        json_schema: {
-          name: "music_theme",
-          strict: true,
-          schema: {
-            type: "object",
-            additionalProperties: false,
-            properties: {
-              theme: { type: "string" }
-            },
-            required: ["theme"]
-          }
-        }
-      }
-    })
-  });
+export function generateLocalTheme({ now = new Date(), previousThemes = [] } = {}) {
+  const candidates = [...fixedThemes, ...buildGeneratedThemes()];
 
-  const payload = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    const message = payload.error?.message || response.statusText;
-    throw new Error(`Azure AI theme generation failed: ${message}`);
+  if (isFriday(now)) {
+    candidates.push(...fridayOnlyThemes);
   }
 
-  const text = extractOutputText(payload).trim();
-  if (!text) {
-    throw new Error("Azure AI returned an empty theme");
-  }
+  const previous = new Set(previousThemes.map(normalizeForComparison));
+  const freshCandidates = candidates.filter(
+    (theme) => !previous.has(normalizeForComparison(theme))
+  );
+  const pool = freshCandidates.length > 0 ? freshCandidates : candidates;
 
-  return normalizeTheme(extractTheme(text));
+  return pick(pool);
 }
 
-function extractOutputText(payload) {
-  return payload.choices?.[0]?.message?.content || "";
+export function isWeekendTheme(theme) {
+  return /\bweekend\b|\bfriday\b/i.test(theme);
 }
 
-function extractTheme(text) {
-  try {
-    const parsed = JSON.parse(text);
-    if (typeof parsed.theme === "string") {
-      return parsed.theme;
-    }
-  } catch {
-    return text;
-  }
-
-  return text;
+function buildGeneratedThemes() {
+  return templates.map((template) => template());
 }
 
-function normalizeTheme(text) {
-  return text
-    .replace(/```(?:json)?/gi, "")
-    .replace(/^["'\s]+|["'\s]+$/g, "")
-    .replace(/^\d+[\).]\s*/, "")
-    .replace(/\s+/g, " ");
+function isFriday(date) {
+  return date.getDay() === 5;
 }
 
-export function isUsableTheme(theme) {
-  const words = theme.split(/\s+/).filter(Boolean);
-  if (words.length < 7 || words.length > 30) {
-    return false;
-  }
-
-  if (!/^share\b/i.test(theme)) {
-    return false;
-  }
-
-  if (/\b(the|a|an|of|for|to|with|that|when|where|what'?s)$/i.test(theme)) {
-    return false;
-  }
-
-  return /[.!?]$/.test(theme);
+function pick(items) {
+  return items[Math.floor(Math.random() * items.length)];
 }
 
-function buildChatCompletionsUrl(endpoint, apiVersion) {
-  const trimmedEndpoint = endpoint.replace(/\/+$/, "");
-  return `${trimmedEndpoint}/models/chat/completions?api-version=${encodeURIComponent(
-    apiVersion
-  )}`;
+function normalizeForComparison(theme) {
+  return theme.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
 }

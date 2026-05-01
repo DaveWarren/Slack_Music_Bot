@@ -58,11 +58,7 @@ export function startSlashCommandServer(config) {
 
 async function postSlashTheme(config, responseUrl) {
   const theme = await generateTheme({
-    endpoint: config.azureAiEndpoint,
-    apiKey: config.azureAiApiKey,
-    model: config.azureAiModel,
-    apiVersion: config.azureAiApiVersion,
-    style: config.promptStyle
+    now: new Date()
   });
 
   await postResponseUrl({

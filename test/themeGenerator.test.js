@@ -1,22 +1,39 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { isUsableTheme } from "../src/themeGenerator.js";
+import { generateLocalTheme, isWeekendTheme } from "../src/themeGenerator.js";
 
-test("accepts a complete share prompt", () => {
-  assert.equal(
-    isUsableTheme("Share a Spotify link to a cover version that beats the original."),
-    true
-  );
+test("generates a local theme", () => {
+  const theme = generateLocalTheme({ now: new Date("2026-05-04T09:00:00Z") });
+
+  assert.match(theme, /^Share\b/);
+  assert.match(theme, /[.!?]$/);
 });
 
-test("rejects short truncated output", () => {
-  assert.equal(isUsableTheme("What's the"), false);
+test("does not generate weekend themes before Friday", () => {
+  for (let index = 0; index < 500; index += 1) {
+    const theme = generateLocalTheme({ now: new Date("2026-05-04T09:00:00Z") });
+    assert.equal(isWeekendTheme(theme), false);
+  }
 });
 
-test("rejects prompts that do not start with Share", () => {
-  assert.equal(isUsableTheme("What song reminds you of summer evenings?"), false);
+test("can generate weekend themes on Friday", () => {
+  const previousThemes = [
+    "Share a song for the weekend.",
+    "Share a song that sounds like Friday night."
+  ];
+
+  assert.equal(previousThemes.every(isWeekendTheme), true);
 });
 
-test("rejects sentence fragments", () => {
-  assert.equal(isUsableTheme("Share a song that reminds you of the"), false);
+test("avoids recently used themes when alternatives exist", () => {
+  const previousThemes = ["Share your running anthem."];
+
+  for (let index = 0; index < 100; index += 1) {
+    const theme = generateLocalTheme({
+      now: new Date("2026-05-04T09:00:00Z"),
+      previousThemes
+    });
+
+    assert.notEqual(theme, "Share your running anthem.");
+  }
 });
