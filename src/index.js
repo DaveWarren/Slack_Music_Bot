@@ -5,7 +5,7 @@ import { readLastPost, writeLastPost } from "./stateStore.js";
 import { generateThemeChoice } from "./themeGenerator.js";
 import { formatThemeMessage } from "./messageFormatter.js";
 import { postMessage } from "./slackClient.js";
-import { startSlashCommandServer } from "./slashCommandServer.js";
+import { startSlackInteractionServer } from "./slackInteractionServer.js";
 
 await loadDotEnv();
 const config = loadConfig();
@@ -14,7 +14,7 @@ const once = process.argv.includes("--once");
 const server = process.argv.includes("--server");
 
 if (server) {
-  startSlashCommandServer(config);
+  startSlackInteractionServer(config);
 } else if (once) {
   await postTheme("manual");
 } else {

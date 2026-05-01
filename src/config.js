@@ -13,6 +13,7 @@ export function loadConfig(env = process.env) {
     slackChannelId: required(env.SLACK_CHANNEL_ID, "SLACK_CHANNEL_ID"),
     slackSigningSecret: env.SLACK_SIGNING_SECRET,
     slashCommandPath: env.SLASH_COMMAND_PATH || "/slack/commands",
+    slackEventsPath: env.SLACK_EVENTS_PATH || "/slack/events",
     port: Number.parseInt(env.PORT || "3000", 10),
     schedule: {
       cadence,

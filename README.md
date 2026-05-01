@@ -33,16 +33,33 @@ Print 100 sample prompts without posting to Slack:
 npm run sample-prompts
 ```
 
-Run the slash command server:
+Run the Slack interaction server:
 
 ```sh
 npm run server
 ```
 
+It supports both:
+
+- `/music-theme`
+- `@Music Theme Bot pick a theme`
+
 Configure a Slack slash command named `/music-theme` with request URL:
 
 ```text
 https://your-public-host/slack/commands
+```
+
+Configure Slack Events API with request URL:
+
+```text
+https://your-public-host/slack/events
+```
+
+Subscribe the bot to the `app_mention` event. Then a Slack reminder can trigger it:
+
+```text
+/remind #music "@Music Theme Bot pick a theme" every Friday at 9am
 ```
 
 For local testing, expose port `3000` with a tunnel such as ngrok and use the tunnel URL. Add Slack's signing secret to `.env` as `SLACK_SIGNING_SECRET`.
@@ -82,7 +99,8 @@ The default cron is `0 9 * * *`, which is 09:00 UTC. For 09:00 London time durin
 Minimum bot token scope:
 
 - `chat:write`
+- `app_mentions:read`
 
-No event subscription is required unless you later want the bot to react to posted Spotify links.
+Enable Event Subscriptions and subscribe to the `app_mention` bot event if you want Slack reminders or channel members to trigger themes by mentioning the bot.
 
-Slash command mode uses Slack's request signing secret. Find it in your Slack app under **Basic Information** > **App Credentials** > **Signing Secret**.
+Server mode uses Slack's request signing secret. Find it in your Slack app under **Basic Information** > **App Credentials** > **Signing Secret**.
