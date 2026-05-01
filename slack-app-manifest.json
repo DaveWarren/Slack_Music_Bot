@@ -8,7 +8,16 @@
     "bot_user": {
       "display_name": "Music Theme Bot",
       "always_online": false
-    }
+    },
+    "slash_commands": [
+      {
+        "command": "/music-theme",
+        "description": "Post a fresh generated music theme.",
+        "usage_hint": "again",
+        "should_escape": false,
+        "url": "https://example.com/slack/commands"
+      }
+    ]
   },
   "oauth_config": {
     "scopes": {

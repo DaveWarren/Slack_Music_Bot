@@ -10,5 +10,5 @@ test("loads Gemini configuration", () => {
   });
 
   assert.equal(config.geminiApiKey, "gemini-test-key");
-  assert.equal(config.geminiModel, "gemini-2.5-flash");
+  assert.equal(config.geminiModel, "gemini-2.0-flash");
 });

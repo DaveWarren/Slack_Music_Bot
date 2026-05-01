@@ -12,7 +12,10 @@ export function loadConfig(env = process.env) {
     slackBotToken: required(env.SLACK_BOT_TOKEN, "SLACK_BOT_TOKEN"),
     slackChannelId: required(env.SLACK_CHANNEL_ID, "SLACK_CHANNEL_ID"),
     geminiApiKey: required(env.GEMINI_API_KEY, "GEMINI_API_KEY"),
-    geminiModel: env.GEMINI_MODEL || "gemini-2.5-flash",
+    geminiModel: env.GEMINI_MODEL || "gemini-2.0-flash",
+    slackSigningSecret: env.SLACK_SIGNING_SECRET,
+    slashCommandPath: env.SLASH_COMMAND_PATH || "/slack/commands",
+    port: Number.parseInt(env.PORT || "3000", 10),
     promptStyle:
       env.PROMPT_STYLE || "playful, specific, easy for a Slack channel to answer",
     schedule: {

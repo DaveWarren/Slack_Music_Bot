@@ -28,6 +28,20 @@ Post a single theme immediately:
 npm run post-now
 ```
 
+Run the slash command server:
+
+```sh
+npm run server
+```
+
+Configure a Slack slash command named `/music-theme` with request URL:
+
+```text
+https://your-public-host/slack/commands
+```
+
+For local testing, expose port `3000` with a tunnel such as ngrok and use the tunnel URL. Add Slack's signing secret to `.env` as `SLACK_SIGNING_SECRET`.
+
 ## Configuration
 
 `SCHEDULE_CADENCE` supports:
@@ -52,3 +66,5 @@ Minimum bot token scope:
 - `chat:write`
 
 No event subscription is required unless you later want the bot to react to posted Spotify links.
+
+Slash command mode uses Slack's request signing secret. Find it in your Slack app under **Basic Information** > **App Credentials** > **Signing Secret**.

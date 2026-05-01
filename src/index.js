@@ -3,14 +3,19 @@ import { loadConfig } from "./config.js";
 import { dueSlot, nextCheckDelayMs, validateSchedule } from "./scheduler.js";
 import { readLastPost, writeLastPost } from "./stateStore.js";
 import { generateTheme } from "./themeGenerator.js";
+import { formatThemeMessage } from "./messageFormatter.js";
 import { postMessage } from "./slackClient.js";
+import { startSlashCommandServer } from "./slashCommandServer.js";
 
 await loadDotEnv();
 const config = loadConfig();
 validateSchedule(config.schedule);
 const once = process.argv.includes("--once");
+const server = process.argv.includes("--server");
 
-if (once) {
+if (server) {
+  startSlashCommandServer(config);
+} else if (once) {
   await postTheme("manual");
 } else {
   console.log(
@@ -44,11 +49,10 @@ async function postTheme(slotKey) {
     style: config.promptStyle
   });
 
-  const text = `:musical_note: Today's music theme: ${theme}\n\nDrop a Spotify link in the thread or channel.`;
   const slackResponse = await postMessage({
     token: config.slackBotToken,
     channel: config.slackChannelId,
-    text
+    text: formatThemeMessage(theme)
   });
 
   await writeLastPost(config.stateFile, {
