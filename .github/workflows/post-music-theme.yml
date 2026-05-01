@@ -1,0 +1,36 @@
+name: Post music theme
+
+on:
+  schedule:
+    # 09:00 UTC. Change to 08:00 UTC during UK daylight saving time if you want 09:00 London time.
+    - cron: "0 9 * * *"
+  workflow_dispatch:
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Restore prompt history
+        uses: actions/cache@v4
+        with:
+          path: .state
+          key: music-theme-state-${{ github.run_id }}
+          restore-keys: |
+            music-theme-state-
+
+      - name: Post theme
+        run: npm run post-now
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+          SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
+          TZ: Europe/London

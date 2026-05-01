@@ -64,6 +64,19 @@ Weekend prompts are only eligible on Fridays. Prompt selection is category-first
 
 Run this as a long-lived worker process with your process manager of choice, such as systemd, Docker, Render worker, Fly machine, or Heroku worker dyno. The `.state/last-post.json` file prevents duplicate posts for the same scheduled slot after restarts.
 
+## GitHub Actions
+
+This repo includes `.github/workflows/post-music-theme.yml`, which posts a theme on a GitHub Actions schedule and can also be run manually from the GitHub Actions tab.
+
+Add these repository secrets in GitHub:
+
+- `SLACK_BOT_TOKEN`
+- `SLACK_CHANNEL_ID`
+
+The workflow runs `npm run post-now`, so GitHub handles the scheduling and no always-on server is needed. The `.state` folder is cached between runs so recent prompt history is preserved.
+
+The default cron is `0 9 * * *`, which is 09:00 UTC. For 09:00 London time during British Summer Time, change it to `0 8 * * *`.
+
 ## Slack scopes
 
 Minimum bot token scope:
