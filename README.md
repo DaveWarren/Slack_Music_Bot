@@ -58,7 +58,7 @@ For local testing, expose port `3000` with a tunnel such as ngrok and use the tu
 
 The schedule uses the `TZ` environment variable. Set it to an IANA time zone such as `Europe/London` or `America/New_York`.
 
-Weekend prompts are only eligible on Fridays.
+Weekend prompts are only eligible on Fridays. Prompt selection is category-first and weighted, so large families like years and letters do not dominate the schedule. The bot also stores recent prompt history in `.state/last-post.json` and avoids recent exact repeats and the last couple of categories where possible.
 
 ## Running in production
 

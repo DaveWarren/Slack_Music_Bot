@@ -1,5 +1,7 @@
+const historyLimit = 90;
+const categoryCooldown = 2;
+
 const fixedThemes = [
-  "Share one of the best songs from the 80s.",
   "Share a song you think would make a perfect first dance.",
   "Share a song that gets you out of bed.",
   "Share a song that makes you happy.",
@@ -64,6 +66,7 @@ const situations = [
 ];
 
 const eras = ["60s", "70s", "80s", "90s", "00s", "2010s"];
+const years = Array.from({ length: 2025 - 1960 + 1 }, (_, index) => 1960 + index);
 const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
 const albumTrackNumbers = Array.from({ length: 12 }, (_, index) => index + 1);
 const genres = [
@@ -94,95 +97,214 @@ const moments = [
   "the end credits of your life"
 ];
 
-const templates = [
-  ...moods.map((mood) => () => `Share a song that makes you feel ${mood}.`),
-  ...situations.map((situation) => () => `Share a song for ${situation}.`),
-  ...eras.map((era) => () => `Share one of the best songs from the ${era}.`),
-  ...eras.map((era) => () => `Share a song from the ${era} that still sounds fresh.`),
-  ...moods.map(
-    (mood) => () => `Share a song you would play for someone who needs to feel ${mood}.`
-  ),
-  ...situations.map(
-    (situation) => () => `Share a song that would soundtrack ${situation}.`
-  ),
-  ...genres.map((genre) => () => `Share ${articleFor(genre)} ${genre} song everyone should hear.`),
-  ...genres.map((genre) => () => `Share ${articleFor(genre)} ${genre} song that surprised you.`),
-  ...albumTrackNumbers.map(
-    (trackNumber) => () =>
-      `Share the best track ${trackNumber} from any album you love.`
-  ),
-  ...letters.map(
-    (letter) => () => `Share the best song you know that starts with ${letter}.`
-  ),
-  ...moments.map((moment) => () => `Share a song for ${moment}.`),
-  ...moments.map((moment) => () => `Share a song that sounds like ${moment}.`),
-  () => "Share the best first song on an album.",
-  () => "Share the best opening track from any album.",
-  () => "Share the best closing track from any album.",
-  () => "Share the best instrumental song you know.",
-  () => "Share the best song you know that has no lyrics.",
-  () => "Share a wordless song that still says everything.",
-  () => "Share the best song with a number in the title.",
-  () => "Share a song with an age in the title.",
-  () => "Share a song with a year in the title.",
-  () => "Share a song with a single digit in the title."
+const categoryDefinitions = [
+  {
+    id: "fixed",
+    weight: 3,
+    themes: () => fixedThemes
+  },
+  {
+    id: "mood",
+    weight: 2,
+    themes: () => [
+      ...moods.map((mood) => `Share a song that makes you feel ${mood}.`),
+      ...moods.map(
+        (mood) => `Share a song you would play for someone who needs to feel ${mood}.`
+      )
+    ]
+  },
+  {
+    id: "situation",
+    weight: 3,
+    themes: () => [
+      ...situations.map((situation) => `Share a song for ${situation}.`),
+      ...situations.map(
+        (situation) => `Share a song that would soundtrack ${situation}.`
+      ),
+      ...moments.map((moment) => `Share a song for ${moment}.`),
+      ...moments.map((moment) => `Share a song that sounds like ${moment}.`)
+    ]
+  },
+  {
+    id: "era",
+    weight: 2,
+    themes: () => [
+      ...eras.map((era) => `Share one of the best songs from the ${era}.`),
+      ...eras.map((era) => `Share a song from the ${era} that still sounds fresh.`)
+    ]
+  },
+  {
+    id: "genre",
+    weight: 2,
+    themes: () => [
+      ...genres.map((genre) => `Share ${articleFor(genre)} ${genre} song everyone should hear.`),
+      ...genres.map((genre) => `Share ${articleFor(genre)} ${genre} song that surprised you.`)
+    ]
+  },
+  {
+    id: "album_track",
+    weight: 2,
+    themes: () => [
+      ...albumTrackNumbers.map(
+        (trackNumber) => `Share the best track ${trackNumber} from any album you love.`
+      ),
+      "Share the best first song on an album.",
+      "Share the best opening track from any album.",
+      "Share the best closing track from any album."
+    ]
+  },
+  {
+    id: "letter",
+    weight: 1,
+    themes: () =>
+      letters.map((letter) => `Share the best song you know that starts with ${letter}.`)
+  },
+  {
+    id: "year",
+    weight: 1,
+    themes: () => years.map((year) => `Share the best song from ${year}.`)
+  },
+  {
+    id: "instrumental",
+    weight: 1,
+    themes: () => [
+      "Share the best instrumental song you know.",
+      "Share the best song you know that has no lyrics.",
+      "Share a wordless song that still says everything."
+    ]
+  },
+  {
+    id: "number_title",
+    weight: 1,
+    themes: () => [
+      "Share the best song with a number in the title.",
+      "Share a song with an age in the title.",
+      "Share a song with a year in the title.",
+      "Share a song with a single digit in the title."
+    ]
+  },
+  {
+    id: "weekend",
+    weight: 1,
+    onlyFriday: true,
+    themes: () => fridayOnlyThemes
+  }
 ];
 
-export async function generateTheme({ now = new Date(), previousThemes = [] } = {}) {
-  return generateLocalTheme({ now, previousThemes });
+export async function generateTheme(options = {}) {
+  return generateThemeChoice(options).theme;
 }
 
-export function generateLocalTheme({ now = new Date(), previousThemes = [] } = {}) {
-  const candidates = buildThemePool(now);
-
+export function generateThemeChoice({
+  now = new Date(),
+  previousThemes = [],
+  previousCategories = [],
+  rng = Math.random
+} = {}) {
   const previous = new Set(previousThemes.map(normalizeForComparison));
-  const freshCandidates = candidates.filter(
-    (theme) => !previous.has(normalizeForComparison(theme))
-  );
-  const pool = freshCandidates.length > 0 ? freshCandidates : candidates;
+  const recentCategories = new Set(previousCategories.slice(0, categoryCooldown));
 
-  return pick(pool);
+  let categories = getAvailableCategories(now).map((category) => ({
+    ...category,
+    freshThemes: category.themes.filter(
+      (theme) => !previous.has(normalizeForComparison(theme))
+    )
+  }));
+
+  categories = categories.filter((category) => category.freshThemes.length > 0);
+  if (categories.length === 0) {
+    categories = getAvailableCategories(now).map((category) => ({
+      ...category,
+      freshThemes: category.themes
+    }));
+  }
+
+  const cooledCategories = categories.filter(
+    (category) => !recentCategories.has(category.id)
+  );
+  if (cooledCategories.length > 0) {
+    categories = cooledCategories;
+  }
+
+  const category = weightedPick(categories, rng);
+  return {
+    theme: pick(category.freshThemes, rng),
+    category: category.id
+  };
+}
+
+export function generateLocalTheme(options = {}) {
+  return generateThemeChoice(options).theme;
 }
 
 export function generateSampleThemes({ count = 100, now = new Date() } = {}) {
-  const pool = shuffle(buildThemePool(now));
-  const samples = [];
+  const themes = [];
+  const recentThemes = [];
+  const recentCategories = [];
 
-  while (samples.length < count) {
-    samples.push(pool[samples.length % pool.length]);
+  while (themes.length < count) {
+    const choice = generateThemeChoice({
+      now,
+      previousThemes: recentThemes,
+      previousCategories: recentCategories
+    });
+
+    themes.push(choice.theme);
+    recentThemes.unshift(choice.theme);
+    recentCategories.unshift(choice.category);
+    recentThemes.length = Math.min(recentThemes.length, historyLimit);
+    recentCategories.length = Math.min(recentCategories.length, historyLimit);
   }
 
-  return samples;
+  return themes;
 }
 
 export function getThemePool({ now = new Date() } = {}) {
-  return buildThemePool(now);
+  return getAvailableCategories(now).flatMap((category) => category.themes);
+}
+
+export function getThemeCategories({ now = new Date() } = {}) {
+  return getAvailableCategories(now).map(({ id, weight, themes }) => ({
+    id,
+    weight,
+    count: themes.length
+  }));
 }
 
 export function isWeekendTheme(theme) {
   return /\bweekend\b|\bfriday\b/i.test(theme);
 }
 
-function buildGeneratedThemes() {
-  return templates.map((template) => template());
-}
-
-function buildThemePool(now) {
-  const candidates = [...fixedThemes, ...buildGeneratedThemes()];
-
-  if (isFriday(now)) {
-    candidates.push(...fridayOnlyThemes);
-  }
-
-  return candidates;
+function getAvailableCategories(now) {
+  return categoryDefinitions
+    .filter((category) => !category.onlyFriday || isFriday(now))
+    .map((category) => ({
+      id: category.id,
+      weight: category.weight,
+      themes: category.themes()
+    }));
 }
 
 function isFriday(date) {
   return date.getDay() === 5;
 }
 
-function pick(items) {
-  return items[Math.floor(Math.random() * items.length)];
+function pick(items, rng = Math.random) {
+  return items[Math.floor(rng() * items.length)];
+}
+
+function weightedPick(items, rng = Math.random) {
+  const totalWeight = items.reduce((total, item) => total + item.weight, 0);
+  let threshold = rng() * totalWeight;
+
+  for (const item of items) {
+    threshold -= item.weight;
+    if (threshold < 0) {
+      return item;
+    }
+  }
+
+  return items.at(-1);
 }
 
 function normalizeForComparison(theme) {
@@ -191,15 +313,4 @@ function normalizeForComparison(theme) {
 
 function articleFor(word) {
   return /^[aeiou]/i.test(word) || word === "R&B" ? "an" : "a";
-}
-
-function shuffle(items) {
-  const shuffled = [...items];
-
-  for (let index = shuffled.length - 1; index > 0; index -= 1) {
-    const swapIndex = Math.floor(Math.random() * (index + 1));
-    [shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[index]];
-  }
-
-  return shuffled;
 }

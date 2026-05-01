@@ -2,7 +2,7 @@ import { loadDotEnv } from "./dotenv.js";
 import { loadConfig } from "./config.js";
 import { dueSlot, nextCheckDelayMs, validateSchedule } from "./scheduler.js";
 import { readLastPost, writeLastPost } from "./stateStore.js";
-import { generateTheme } from "./themeGenerator.js";
+import { generateThemeChoice } from "./themeGenerator.js";
 import { formatThemeMessage } from "./messageFormatter.js";
 import { postMessage } from "./slackClient.js";
 import { startSlashCommandServer } from "./slashCommandServer.js";
@@ -43,22 +43,46 @@ async function tick() {
 }
 
 async function postTheme(slotKey) {
-  const theme = await generateTheme({
-    now: new Date()
+  const previousState = await readLastPost(config.stateFile);
+  const history =
+    previousState?.history ||
+    (previousState?.theme
+      ? [
+          {
+            theme: previousState.theme,
+            category: previousState.category,
+            postedAt: previousState.postedAt
+          }
+        ]
+      : []);
+  const choice = generateThemeChoice({
+    now: new Date(),
+    previousThemes: history.map((entry) => entry.theme),
+    previousCategories: history.map((entry) => entry.category).filter(Boolean)
   });
 
   const slackResponse = await postMessage({
     token: config.slackBotToken,
     channel: config.slackChannelId,
-    text: formatThemeMessage(theme)
+    text: formatThemeMessage(choice.theme)
   });
 
+  const postedAt = new Date().toISOString();
   await writeLastPost(config.stateFile, {
     slotKey,
-    theme,
+    theme: choice.theme,
+    category: choice.category,
     slackTs: slackResponse.ts,
-    postedAt: new Date().toISOString()
+    postedAt,
+    history: [
+      {
+        theme: choice.theme,
+        category: choice.category,
+        postedAt
+      },
+      ...history
+    ].slice(0, 90)
   });
 
-  console.log(`Posted theme for ${slotKey}: ${theme}`);
+  console.log(`Posted theme for ${slotKey} (${choice.category}): ${choice.theme}`);
 }
