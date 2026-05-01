@@ -1,27 +1,61 @@
 # Slack Music Theme Bot
 
-A small Slack worker that posts a generated music-sharing theme on a configurable cadence.
+A small Slack bot that posts a music-sharing theme into a channel. It is designed for the simple production path: **GitHub Actions runs on a schedule, generates a local prompt, posts to Slack, then exits**.
 
 Example post:
 
-> Today's music theme: Share a Spotify link to a song that sounds like the first warm evening of summer.
+> Today's music theme: Share a song with a perfect first 10 seconds.
 
-Themes are generated locally by combining a large set of built-in music prompts with reusable variations. The bot does not call any AI API.
+Themes are generated locally from weighted prompt categories. The bot does not call any AI API.
 
-## Setup
+## Corp Slack Setup
 
-1. Create a Slack app, using `slack-app-manifest.json` if you want the quickest path.
-2. Invite the bot to the channel where people will share Spotify links.
-3. Copy `.env.example` to `.env` and fill in:
-   - `SLACK_BOT_TOKEN`
-   - `SLACK_CHANNEL_ID`
-4. Run with Node 20 or newer:
+1. Create a Slack app at https://api.slack.com/apps.
+2. Choose **Create New App** > **From an app manifest**.
+3. Select your corp workspace.
+4. Paste `slack-app-manifest.json`.
+5. Install the app to the workspace.
+6. Copy the **Bot User OAuth Token** from **OAuth & Permissions**. It starts with `xoxb-`.
+7. Invite the bot to the target Slack channel:
 
-```sh
-npm start
+```text
+/invite @Music Theme Bot
 ```
 
-Post a single theme immediately:
+The app only needs the `chat:write` bot scope. If your corp Slack requires app approval, this minimal manifest should be easier to approve than an interactive app with events or slash commands.
+
+## GitHub Actions Only
+
+This is the recommended way to run the bot. No server, public URL, Slack event subscription, slash command, or Slack reminder is required.
+
+1. Push this repo to GitHub.
+2. Go to **Settings** > **Secrets and variables** > **Actions**.
+3. Add these repository secrets:
+
+```text
+SLACK_BOT_TOKEN
+SLACK_CHANNEL_ID
+```
+
+4. Go to **Actions** > **Post music theme** > **Run workflow** to test it manually.
+
+The workflow lives at `.github/workflows/post-music-theme.yml`. It runs `npm run post-now`, caches `.state`, and preserves recent prompt history between runs.
+
+The default schedule is:
+
+```yaml
+- cron: "0 9 * * *"
+```
+
+That is 09:00 UTC. For 09:00 London time during British Summer Time, change it to:
+
+```yaml
+- cron: "0 8 * * *"
+```
+
+## Local Commands
+
+Post one theme immediately:
 
 ```sh
 npm run post-now
@@ -33,74 +67,35 @@ Print 100 sample prompts without posting to Slack:
 npm run sample-prompts
 ```
 
-Run the Slack interaction server:
+Run tests:
 
 ```sh
-npm run server
+npm test
 ```
-
-It supports both:
-
-- `/music-theme`
-- `@Music Theme Bot pick a theme`
-
-Configure a Slack slash command named `/music-theme` with request URL:
-
-```text
-https://your-public-host/slack/commands
-```
-
-Configure Slack Events API with request URL:
-
-```text
-https://your-public-host/slack/events
-```
-
-Subscribe the bot to the `app_mention` event. Then a Slack reminder can trigger it:
-
-```text
-/remind #music "@Music Theme Bot pick a theme" every Friday at 9am
-```
-
-For local testing, expose port `3000` with a tunnel such as ngrok and use the tunnel URL. Add Slack's signing secret to `.env` as `SLACK_SIGNING_SECRET`.
 
 ## Configuration
 
-`SCHEDULE_CADENCE` supports:
+For local runs, copy `.env.example` to `.env` and fill in:
 
-- `hourly`: posts at the top of every hour.
-- `daily`: posts every day at `SCHEDULE_TIME`.
-- `weekly`: posts on `SCHEDULE_DAY` at `SCHEDULE_TIME`.
-- `interval`: posts every `SCHEDULE_INTERVAL_MINUTES`.
+```env
+SLACK_BOT_TOKEN=xoxb-your-token
+SLACK_CHANNEL_ID=C0123456789
+```
 
-The schedule uses the `TZ` environment variable. Set it to an IANA time zone such as `Europe/London` or `America/New_York`.
+Optional schedule settings are still supported for local `npm start` worker mode:
 
-Weekend prompts are only eligible on Fridays. Prompt selection is category-first and weighted, so large families like years and letters do not dominate the schedule. The bot also stores recent prompt history in `.state/last-post.json` and avoids recent exact repeats and the last couple of categories where possible.
+- `SCHEDULE_CADENCE`: `hourly`, `daily`, `weekly`, or `interval`
+- `SCHEDULE_TIME`: 24-hour `HH:MM`
+- `SCHEDULE_DAY`: used for weekly schedules
+- `SCHEDULE_INTERVAL_MINUTES`: used for interval schedules
+- `TZ`: IANA time zone such as `Europe/London`
 
-## Running in production
+## Prompt Selection
 
-Run this as a long-lived worker process with your process manager of choice, such as systemd, Docker, Render worker, Fly machine, or Heroku worker dyno. The `.state/last-post.json` file prevents duplicate posts for the same scheduled slot after restarts.
+Prompt selection is category-first and weighted so large prompt families, such as years and letters, do not dominate the schedule. The bot stores recent prompt history in `.state/last-post.json` and avoids recent exact repeats and the last couple of categories where possible.
 
-## GitHub Actions
+Weekend/Friday prompts are only eligible on Fridays.
 
-This repo includes `.github/workflows/post-music-theme.yml`, which posts a theme on a GitHub Actions schedule and can also be run manually from the GitHub Actions tab.
+## App Icon
 
-Add these repository secrets in GitHub:
-
-- `SLACK_BOT_TOKEN`
-- `SLACK_CHANNEL_ID`
-
-The workflow runs `npm run post-now`, so GitHub handles the scheduling and no always-on server is needed. The `.state` folder is cached between runs so recent prompt history is preserved.
-
-The default cron is `0 9 * * *`, which is 09:00 UTC. For 09:00 London time during British Summer Time, change it to `0 8 * * *`.
-
-## Slack scopes
-
-Minimum bot token scope:
-
-- `chat:write`
-- `app_mentions:read`
-
-Enable Event Subscriptions and subscribe to the `app_mention` bot event if you want Slack reminders or channel members to trigger themes by mentioning the bot.
-
-Server mode uses Slack's request signing secret. Find it in your Slack app under **Basic Information** > **App Credentials** > **Signing Secret**.
+Slack lets you upload an app icon in **Basic Information** > **Display Information**. This repo includes `assets/slack-app-icon.svg`; if Slack asks for a PNG, export it from the SVG and upload the PNG.

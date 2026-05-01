@@ -1,7 +1,7 @@
 {
   "display_information": {
     "name": "Music Theme Bot",
-    "description": "Posts generated music sharing themes on request.",
+    "description": "Posts music sharing themes on a schedule.",
     "background_color": "#1f6f5c"
   },
   "features": {
@@ -9,26 +9,18 @@
       "display_name": "Music Theme Bot",
       "always_online": false
     },
-    "slash_commands": [
-      {
-        "command": "/music-theme",
-        "description": "Post a fresh generated music theme.",
-        "usage_hint": "again",
-        "should_escape": false,
-        "url": "https://example.com/slack/commands"
-      }
-    ]
+    "app_home": {
+      "home_tab_enabled": false,
+      "messages_tab_enabled": false,
+      "messages_tab_read_only_enabled": true
+    }
   },
   "oauth_config": {
     "scopes": {
-      "bot": ["chat:write", "app_mentions:read"]
+      "bot": ["chat:write"]
     }
   },
   "settings": {
-    "event_subscriptions": {
-      "request_url": "https://example.com/slack/events",
-      "bot_events": ["app_mention"]
-    },
     "org_deploy_enabled": false,
     "socket_mode_enabled": false,
     "token_rotation_enabled": false

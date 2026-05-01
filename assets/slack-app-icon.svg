@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Music Theme Bot icon</title>
+  <desc id="desc">A simple record and music note icon for the Slack music theme bot.</desc>
+  <rect width="512" height="512" rx="96" fill="#1f6f5c"/>
+  <circle cx="240" cy="276" r="138" fill="#101820"/>
+  <circle cx="240" cy="276" r="92" fill="#f5f0e6"/>
+  <circle cx="240" cy="276" r="28" fill="#1f6f5c"/>
+  <path fill="#f7c948" d="M338 108c0-11 9-20 20-20h54c11 0 20 9 20 20v206c0 37-30 67-67 67s-67-30-67-67 30-67 67-67c10 0 20 2 29 7v-126h-36c-11 0-20-9-20-20z"/>
+  <circle cx="365" cy="314" r="30" fill="#f7c948"/>
+</svg>
