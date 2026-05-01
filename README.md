@@ -6,7 +6,7 @@ Example post:
 
 > Today's music theme: Share a Spotify link to a song that sounds like the first warm evening of summer.
 
-Themes are generated at posting time with the OpenAI API, so the bot is not cycling through a hardcoded prompt list.
+Themes are generated at posting time with the Gemini API, so the bot is not cycling through a hardcoded prompt list.
 
 ## Setup
 
@@ -15,7 +15,7 @@ Themes are generated at posting time with the OpenAI API, so the bot is not cycl
 3. Copy `.env.example` to `.env` and fill in:
    - `SLACK_BOT_TOKEN`
    - `SLACK_CHANNEL_ID`
-   - `OPENAI_API_KEY`
+   - `GEMINI_API_KEY`
 4. Run with Node 20 or newer:
 
 ```sh
@@ -38,6 +38,8 @@ npm run post-now
 - `interval`: posts every `SCHEDULE_INTERVAL_MINUTES`.
 
 The schedule uses the `TZ` environment variable. Set it to an IANA time zone such as `Europe/London` or `America/New_York`.
+
+Get a Gemini API key from Google AI Studio: https://aistudio.google.com/app/apikey
 
 ## Running in production
 

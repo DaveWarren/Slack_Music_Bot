@@ -11,8 +11,8 @@ export function loadConfig(env = process.env) {
   return {
     slackBotToken: required(env.SLACK_BOT_TOKEN, "SLACK_BOT_TOKEN"),
     slackChannelId: required(env.SLACK_CHANNEL_ID, "SLACK_CHANNEL_ID"),
-    openAiApiKey: required(env.OPENAI_API_KEY, "OPENAI_API_KEY"),
-    openAiModel: env.OPENAI_MODEL || "gpt-5.4-mini",
+    geminiApiKey: required(env.GEMINI_API_KEY, "GEMINI_API_KEY"),
+    geminiModel: env.GEMINI_MODEL || "gemini-2.5-flash",
     promptStyle:
       env.PROMPT_STYLE || "playful, specific, easy for a Slack channel to answer",
     schedule: {

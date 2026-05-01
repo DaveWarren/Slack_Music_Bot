@@ -39,8 +39,8 @@ async function tick() {
 
 async function postTheme(slotKey) {
   const theme = await generateTheme({
-    apiKey: config.openAiApiKey,
-    model: config.openAiModel,
+    apiKey: config.geminiApiKey,
+    model: config.geminiModel,
     style: config.promptStyle
   });
 
