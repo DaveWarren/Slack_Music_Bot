@@ -36,7 +36,24 @@ const fixedThemes = [
 const fridayOnlyThemes = [
   "Share a song for the weekend.",
   "Share a song that sounds like Friday night.",
-  "Share a song to start the weekend properly."
+  "Share a song to start the weekend properly.",
+  "Share a song for leaving work on a Friday.",
+  "Share a song that feels like switching your out-of-office on.",
+  "Share a song for Friday drinks.",
+  "Share a song for the first hour of the weekend.",
+  "Share a song that belongs on a Friday night playlist.",
+  "Share a song for getting ready on a Friday.",
+  "Share a song that sounds like payday Friday.",
+  "Share a song for a Friday evening train home.",
+  "Share a song that turns a Friday around.",
+  "Share a song for dancing into the weekend.",
+  "Share a song that feels like clocking off.",
+  "Share a song for a lazy Saturday morning, queued up on Friday.",
+  "Share a song that makes Friday feel official.",
+  "Share a song for the walk home on Friday.",
+  "Share a song for a big Friday night in.",
+  "Share a song for a big Friday night out.",
+  "Share a song that sounds like the weekend starting early."
 ];
 
 const moods = [

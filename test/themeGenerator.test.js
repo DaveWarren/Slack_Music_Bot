@@ -23,12 +23,12 @@ test("does not generate weekend themes before Friday", () => {
 });
 
 test("can generate weekend themes on Friday", () => {
-  const previousThemes = [
-    "Share a song for the weekend.",
-    "Share a song that sounds like Friday night."
-  ];
+  const pool = getThemePool({ now: new Date("2026-05-01T09:00:00Z") });
+  const weekendThemes = pool.filter(isWeekendTheme);
 
-  assert.equal(previousThemes.every(isWeekendTheme), true);
+  assert.ok(weekendThemes.length >= 15);
+  assert.ok(weekendThemes.includes("Share a song for the weekend."));
+  assert.ok(weekendThemes.includes("Share a song for leaving work on a Friday."));
 });
 
 test("avoids recently used themes when alternatives exist", () => {
