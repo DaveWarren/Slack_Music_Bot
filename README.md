@@ -6,7 +6,7 @@ Example post:
 
 > Today's music theme: Share a Spotify link to a song that sounds like the first warm evening of summer.
 
-Themes are generated at posting time with the Gemini API, so the bot is not cycling through a hardcoded prompt list.
+Themes are generated at posting time with Azure AI Foundry, so the bot is not cycling through a hardcoded prompt list.
 
 ## Setup
 
@@ -15,7 +15,8 @@ Themes are generated at posting time with the Gemini API, so the bot is not cycl
 3. Copy `.env.example` to `.env` and fill in:
    - `SLACK_BOT_TOKEN`
    - `SLACK_CHANNEL_ID`
-   - `GEMINI_API_KEY`
+   - `AZURE_AI_ENDPOINT`
+   - `AZURE_AI_API_KEY`
 4. Run with Node 20 or newer:
 
 ```sh
@@ -53,7 +54,7 @@ For local testing, expose port `3000` with a tunnel such as ngrok and use the tu
 
 The schedule uses the `TZ` environment variable. Set it to an IANA time zone such as `Europe/London` or `America/New_York`.
 
-Get a Gemini API key from Google AI Studio: https://aistudio.google.com/app/apikey
+Create an Azure AI Foundry resource and deploy a chat completions model. Set `AZURE_AI_ENDPOINT`, `AZURE_AI_API_KEY`, and optionally `AZURE_AI_MODEL` in `.env`.
 
 ## Running in production
 

@@ -44,8 +44,10 @@ async function tick() {
 
 async function postTheme(slotKey) {
   const theme = await generateTheme({
-    apiKey: config.geminiApiKey,
-    model: config.geminiModel,
+    endpoint: config.azureAiEndpoint,
+    apiKey: config.azureAiApiKey,
+    model: config.azureAiModel,
+    apiVersion: config.azureAiApiVersion,
     style: config.promptStyle
   });
 

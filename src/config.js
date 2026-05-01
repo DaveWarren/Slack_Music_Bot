@@ -11,8 +11,10 @@ export function loadConfig(env = process.env) {
   return {
     slackBotToken: required(env.SLACK_BOT_TOKEN, "SLACK_BOT_TOKEN"),
     slackChannelId: required(env.SLACK_CHANNEL_ID, "SLACK_CHANNEL_ID"),
-    geminiApiKey: required(env.GEMINI_API_KEY, "GEMINI_API_KEY"),
-    geminiModel: env.GEMINI_MODEL || "gemini-2.0-flash",
+    azureAiEndpoint: required(env.AZURE_AI_ENDPOINT, "AZURE_AI_ENDPOINT"),
+    azureAiApiKey: required(env.AZURE_AI_API_KEY, "AZURE_AI_API_KEY"),
+    azureAiModel: env.AZURE_AI_MODEL || "gpt-4o-mini",
+    azureAiApiVersion: env.AZURE_AI_API_VERSION || "2024-05-01-preview",
     slackSigningSecret: env.SLACK_SIGNING_SECRET,
     slashCommandPath: env.SLASH_COMMAND_PATH || "/slack/commands",
     port: Number.parseInt(env.PORT || "3000", 10),

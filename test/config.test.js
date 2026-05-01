@@ -2,13 +2,16 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { loadConfig } from "../src/config.js";
 
-test("loads Gemini configuration", () => {
+test("loads Azure AI configuration", () => {
   const config = loadConfig({
     SLACK_BOT_TOKEN: "xoxb-test",
     SLACK_CHANNEL_ID: "C123",
-    GEMINI_API_KEY: "gemini-test-key"
+    AZURE_AI_ENDPOINT: "https://example.services.ai.azure.com",
+    AZURE_AI_API_KEY: "azure-test-key"
   });
 
-  assert.equal(config.geminiApiKey, "gemini-test-key");
-  assert.equal(config.geminiModel, "gemini-2.0-flash");
+  assert.equal(config.azureAiEndpoint, "https://example.services.ai.azure.com");
+  assert.equal(config.azureAiApiKey, "azure-test-key");
+  assert.equal(config.azureAiModel, "gpt-4o-mini");
+  assert.equal(config.azureAiApiVersion, "2024-05-01-preview");
 });
