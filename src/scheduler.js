@@ -9,9 +9,11 @@ import {
 const minuteMs = 60 * 1000;
 const hourMs = 60 * minuteMs;
 
+// Return the current due slot, or null when this minute should not post.
 export function dueSlot(now, schedule) {
   validateSchedule(schedule);
 
+  // Interval schedules are based on absolute UTC time boundaries.
   if (schedule.cadence === "interval") {
     const intervalMs = schedule.intervalMinutes * minuteMs;
     if (now.getTime() % intervalMs >= minuteMs) {
@@ -25,6 +27,7 @@ export function dueSlot(now, schedule) {
     };
   }
 
+  // Hourly schedules post at minute 00 in the configured local time zone.
   if (schedule.cadence === "hourly") {
     if (minuteOfDay(now, schedule.timeZone) % 60 !== 0) {
       return null;
@@ -38,6 +41,7 @@ export function dueSlot(now, schedule) {
     };
   }
 
+  // Daily and weekly schedules both use the configured local HH:MM.
   const targetMinute = parseTime(schedule.time);
   const currentMinute = minuteOfDay(now, schedule.timeZone);
   if (currentMinute !== targetMinute) {
@@ -62,6 +66,7 @@ export function dueSlot(now, schedule) {
   };
 }
 
+// Choose how long the long-running process should sleep before checking again.
 export function nextCheckDelayMs(now, schedule) {
   if (schedule.cadence === "interval") {
     const intervalMs = schedule.intervalMinutes * minuteMs;
@@ -78,6 +83,7 @@ export function nextCheckDelayMs(now, schedule) {
   return 30 * 1000;
 }
 
+// Fail fast for invalid schedule configuration.
 export function validateSchedule(schedule) {
   if (!schedule.timeZone) {
     throw new Error("A schedule timeZone is required");
@@ -105,6 +111,7 @@ export function validateSchedule(schedule) {
   }
 }
 
+// Convert a 24-hour HH:MM string into minutes since midnight.
 function parseTime(value) {
   const match = /^([01]\d|2[0-3]):([0-5]\d)$/.exec(value || "");
   if (!match) {

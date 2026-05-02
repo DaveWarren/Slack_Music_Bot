@@ -1,5 +1,7 @@
+// Supported schedule modes for automated posting.
 const validCadences = new Set(["hourly", "daily", "weekly", "interval"]);
 
+// Read all runtime settings from environment variables and apply safe defaults.
 export function loadConfig(env = process.env) {
   const cadence = (env.SCHEDULE_CADENCE || "daily").toLowerCase();
   if (!validCadences.has(cadence)) {
@@ -26,6 +28,7 @@ export function loadConfig(env = process.env) {
   };
 }
 
+// Make missing required env vars fail early with a clear message.
 function required(value, name) {
   if (!value) {
     throw new Error(`${name} is required`);

@@ -1,3 +1,4 @@
+// Post an in-channel response using the one-off response_url from a slash command.
 export async function postResponseUrl({ responseUrl, text }) {
   const response = await fetch(responseUrl, {
     method: "POST",

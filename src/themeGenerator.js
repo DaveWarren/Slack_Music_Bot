@@ -1,6 +1,10 @@
+// Keep enough generated prompt history to avoid obvious repeats in samples and posts.
 const historyLimit = 90;
+
+// Avoid reusing any of the most recent N categories when other categories are available.
 const categoryCooldown = 2;
 
+// Hand-written prompts that do not fit a generated pattern.
 const fixedThemes = [
   "Share a song you think would make a perfect first dance.",
   "Share a song that gets you out of bed.",
@@ -238,6 +242,8 @@ const moments = [
   "a night you did not want to end"
 ];
 
+// Each category has a weight for how often it should be chosen relative to others.
+// `themes` is a function so generated categories are rebuilt from the latest source lists.
 const categoryDefinitions = [
   {
     id: "fixed",
@@ -341,15 +347,18 @@ export async function generateTheme(options = {}) {
   return generateThemeChoice(options).theme;
 }
 
+// Pick one fresh theme and return both the prompt and the category it came from.
 export function generateThemeChoice({
   now = new Date(),
   previousThemes = [],
   previousCategories = [],
   rng = Math.random
 } = {}) {
+  // Normalize previous prompts so punctuation/case changes do not allow duplicates.
   const previous = new Set(previousThemes.map(normalizeForComparison));
   const recentCategories = new Set(previousCategories.slice(0, categoryCooldown));
 
+  // Remove recently used themes from each category before choosing.
   let categories = getAvailableCategories(now).map((category) => ({
     ...category,
     freshThemes: category.themes.filter(
@@ -357,6 +366,7 @@ export function generateThemeChoice({
     )
   }));
 
+  // If every prompt has been used recently, reset back to the full available pool.
   categories = categories.filter((category) => category.freshThemes.length > 0);
   if (categories.length === 0) {
     categories = getAvailableCategories(now).map((category) => ({
@@ -365,6 +375,7 @@ export function generateThemeChoice({
     }));
   }
 
+  // Prefer categories outside the cooldown window, but fall back if needed.
   const cooledCategories = categories.filter(
     (category) => !recentCategories.has(category.id)
   );
@@ -379,10 +390,12 @@ export function generateThemeChoice({
   };
 }
 
+// Backwards-compatible alias used by the posting code.
 export function generateLocalTheme(options = {}) {
   return generateThemeChoice(options).theme;
 }
 
+// Generate a run of prompts while simulating recent history between picks.
 export function generateSampleThemes({ count = 100, now = new Date() } = {}) {
   const themes = [];
   const recentThemes = [];
@@ -405,10 +418,12 @@ export function generateSampleThemes({ count = 100, now = new Date() } = {}) {
   return themes;
 }
 
+// Expose the full prompt pool for tests and diagnostics.
 export function getThemePool({ now = new Date() } = {}) {
   return getAvailableCategories(now).flatMap((category) => category.themes);
 }
 
+// Expose category metadata without leaking the full prompt lists.
 export function getThemeCategories({ now = new Date() } = {}) {
   return getAvailableCategories(now).map(({ id, weight, themes }) => ({
     id,
@@ -417,10 +432,12 @@ export function getThemeCategories({ now = new Date() } = {}) {
   }));
 }
 
+// Weekend prompts should only be available on Fridays.
 export function isWeekendTheme(theme) {
   return /\bweekend\b|\bfriday\b/i.test(theme);
 }
 
+// Apply day-based category rules and expand generated theme lists.
 function getAvailableCategories(now) {
   return categoryDefinitions
     .filter((category) => !category.onlyFriday || isFriday(now))
@@ -435,10 +452,12 @@ function isFriday(date) {
   return date.getDay() === 5;
 }
 
+// Pick a single item uniformly from a list.
 function pick(items, rng = Math.random) {
   return items[Math.floor(rng() * items.length)];
 }
 
+// Pick a category according to its relative weight.
 function weightedPick(items, rng = Math.random) {
   const totalWeight = items.reduce((total, item) => total + item.weight, 0);
   let threshold = rng() * totalWeight;
@@ -453,10 +472,12 @@ function weightedPick(items, rng = Math.random) {
   return items.at(-1);
 }
 
+// Make prompt text safe for repeat detection.
 function normalizeForComparison(theme) {
   return theme.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
 }
 
+// Keep generated genre prompts grammatical: "a rock song", "an R&B song".
 function articleFor(word) {
   return /^[aeiou]/i.test(word) || word === "R&B" ? "an" : "a";
 }

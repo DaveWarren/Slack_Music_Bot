@@ -1,5 +1,6 @@
 import { readFile } from "node:fs/promises";
 
+// Lightweight .env loader for local runs; existing process env values win.
 export async function loadDotEnv(path = ".env", env = process.env) {
   let contents;
   try {
@@ -31,6 +32,7 @@ export async function loadDotEnv(path = ".env", env = process.env) {
   }
 }
 
+// Support simple quoted values without pulling in a dependency.
 function unquote(value) {
   if (
     (value.startsWith('"') && value.endsWith('"')) ||

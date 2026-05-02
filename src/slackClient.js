@@ -1,3 +1,4 @@
+// Post a normal channel message using the Slack Web API.
 export async function postMessage({ token, channel, text }) {
   const response = await fetch("https://slack.com/api/chat.postMessage", {
     method: "POST",
@@ -13,6 +14,7 @@ export async function postMessage({ token, channel, text }) {
     })
   });
 
+  // Slack can return HTTP 200 with `ok: false`, so check both layers.
   const payload = await response.json();
   if (!response.ok || !payload.ok) {
     throw new Error(`Slack post failed: ${payload.error || response.statusText}`);

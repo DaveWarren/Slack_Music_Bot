@@ -10,6 +10,10 @@ import { startSlackInteractionServer } from "./slackInteractionServer.js";
 await loadDotEnv();
 const config = loadConfig();
 validateSchedule(config.schedule);
+
+// CLI modes:
+// --server handles Slack slash commands/events, --once posts immediately,
+// otherwise the process stays alive and posts when the schedule is due.
 const once = process.argv.includes("--once");
 const server = process.argv.includes("--server");
 
@@ -24,6 +28,7 @@ if (server) {
   await tick();
 }
 
+// Check whether the current schedule slot is due, then sleep until the next check.
 async function tick() {
   try {
     const now = new Date();
@@ -42,8 +47,11 @@ async function tick() {
   }
 }
 
+// Pick a theme using recent history, post it to Slack, and save the result.
 async function postTheme(slotKey) {
   const previousState = await readLastPost(config.stateFile);
+
+  // Support both the current `history` shape and older state files with one theme.
   const history =
     previousState?.history ||
     (previousState?.theme
@@ -55,6 +63,7 @@ async function postTheme(slotKey) {
           }
         ]
       : []);
+
   const choice = generateThemeChoice({
     now: new Date(),
     previousThemes: history.map((entry) => entry.theme),
@@ -67,6 +76,7 @@ async function postTheme(slotKey) {
     text: formatThemeMessage(choice.theme)
   });
 
+  // Store a compact history so future runs can avoid repeated prompts/categories.
   const postedAt = new Date().toISOString();
   await writeLastPost(config.stateFile, {
     slotKey,

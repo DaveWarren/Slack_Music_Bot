@@ -9,6 +9,7 @@ import { readLastPost, writeLastPost } from "./stateStore.js";
 const maxBodyBytes = 1024 * 1024;
 const historyLimit = 90;
 
+// Start the HTTP server that Slack calls for slash commands and app mentions.
 export function startSlackInteractionServer(config) {
   if (!config.slackSigningSecret) {
     throw new Error("SLACK_SIGNING_SECRET is required for server mode");
@@ -28,6 +29,7 @@ export function startSlackInteractionServer(config) {
       return;
     }
 
+    // Slack signs every interactive request; reject anything that does not verify.
     if (!verifySlackRequest(request.headers, rawBody, config.slackSigningSecret)) {
       sendJson(response, 401, { text: "Invalid Slack signature" });
       return;
@@ -55,6 +57,7 @@ export function startSlackInteractionServer(config) {
   return server;
 }
 
+// Decide whether an app mention is asking the bot to choose a music prompt.
 export function shouldPickThemeFromMention(text = "") {
   const normalized = text
     .replace(/<@[A-Z0-9]+>/g, "")
@@ -65,6 +68,7 @@ export function shouldPickThemeFromMention(text = "") {
     /\b(theme|prompt|music|song)\b/.test(normalized);
 }
 
+// Slash commands must be acknowledged quickly, so posting continues in the background.
 async function handleSlashCommand(config, rawBody, response) {
   const form = new URLSearchParams(rawBody.toString("utf8"));
   const responseUrl = form.get("response_url");
@@ -83,6 +87,7 @@ async function handleSlashCommand(config, rawBody, response) {
   });
 }
 
+// Events include Slack URL verification plus normal app_mention callbacks.
 async function handleSlackEvent(config, rawBody, response) {
   const payload = JSON.parse(rawBody.toString("utf8"));
   if (payload.type === "url_verification") {
@@ -108,6 +113,7 @@ async function handleSlackEvent(config, rawBody, response) {
   });
 }
 
+// Post via Slack's response_url for slash commands.
 async function postThemeToResponseUrl(config, responseUrl) {
   const choice = await pickThemeWithHistory(config);
 
@@ -120,6 +126,7 @@ async function postThemeToResponseUrl(config, responseUrl) {
   console.log(`Posted slash-command theme (${choice.category}): ${choice.theme}`);
 }
 
+// Post directly to the channel for app mentions.
 async function postThemeToChannel(config, channel) {
   const choice = await pickThemeWithHistory(config);
   const slackResponse = await postMessage({
@@ -132,6 +139,7 @@ async function postThemeToChannel(config, channel) {
   console.log(`Posted mention theme to ${channel} (${choice.category}): ${choice.theme}`);
 }
 
+// Reuse stored history so ad-hoc requests avoid recent prompts too.
 async function pickThemeWithHistory(config) {
   const state = await readLastPost(config.stateFile);
   const history = extractHistory(state);
@@ -143,6 +151,7 @@ async function pickThemeWithHistory(config) {
   });
 }
 
+// Save the newest prompt at the front of history.
 async function saveThemeHistory(config, choice, slackTs) {
   const state = await readLastPost(config.stateFile);
   const history = extractHistory(state);
@@ -165,6 +174,7 @@ async function saveThemeHistory(config, choice, slackTs) {
   });
 }
 
+// Read current and legacy state shapes as the same history array.
 function extractHistory(state) {
   return (
     state?.history ||
@@ -180,6 +190,7 @@ function extractHistory(state) {
   );
 }
 
+// Verify Slack's HMAC signature and reject replayed requests older than five minutes.
 function verifySlackRequest(headers, rawBody, signingSecret) {
   const timestamp = headers["x-slack-request-timestamp"];
   const signature = headers["x-slack-signature"];
@@ -200,6 +211,7 @@ function verifySlackRequest(headers, rawBody, signingSecret) {
   return expected.length === actual.length && timingSafeEqual(expected, actual);
 }
 
+// Read the raw request body while enforcing a maximum size.
 async function readRequestBody(request) {
   const chunks = [];
   let size = 0;
@@ -216,6 +228,7 @@ async function readRequestBody(request) {
   return Buffer.concat(chunks);
 }
 
+// Send a small JSON response to Slack.
 function sendJson(response, statusCode, payload) {
   response.writeHead(statusCode, {
     "Content-Type": "application/json"
