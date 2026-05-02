@@ -86,6 +86,34 @@ const fridayOnlyThemes = [
   "Share a song that sounds like the weekend starting early."
 ];
 
+const bandThemes = [
+  "Share a song by a band fronted by a female singer.",
+  "Share a song by a band that broke up too soon.",
+  "Share a song by a band with relatives in it.",
+  "Share a song by a band made up of siblings.",
+  "Share a song by a band with a brilliant drummer.",
+  "Share a song by a band whose name starts with The.",
+  "Share a song by a band that changed lead singer.",
+  "Share a song by a band that sounds better live.",
+  "Share a song by a band that made one perfect album.",
+  "Share a song by a band with three or more singers.",
+  "Share a song by a band that should reunite.",
+  "Share a song by a band that should have stayed broken up.",
+  "Share a song by a band from your hometown or nearest city.",
+  "Share a song by a band with a great keyboard player.",
+  "Share a song by a band with a ridiculous name.",
+  "Share a song by a band whose members clearly loved drama.",
+  "Share a song by a band where the bassist steals the show.",
+  "Share a song by a band that only needed one hit to be remembered.",
+  "Share a song by a band that kept getting better with age.",
+  "Share a song by a band whose side project was also great.",
+  "Share a song by a band with a famous producer.",
+  "Share a song by a band that became massive after changing its name.",
+  "Share a song by a band with a perfect debut single.",
+  "Share a song by a band that deserved a bigger crowd.",
+  "Share a song by a band you wish you had seen live."
+];
+
 const moods = [
   "happy",
   "hopeful",
@@ -265,6 +293,11 @@ const categoryDefinitions = [
       "Share the best opening track from any album.",
       "Share the best closing track from any album."
     ]
+  },
+  {
+    id: "band",
+    weight: 2,
+    themes: () => bandThemes
   },
   {
     id: "letter",

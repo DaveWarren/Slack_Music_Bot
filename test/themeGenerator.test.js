@@ -52,6 +52,14 @@ test("includes album track number prompts", () => {
   assert.ok(pool.includes("Share the best track 12 from any album you love."));
 });
 
+test("includes band-focused prompts", () => {
+  const pool = getThemePool({ now: new Date("2026-05-04T09:00:00Z") });
+
+  assert.ok(pool.includes("Share a song by a band fronted by a female singer."));
+  assert.ok(pool.includes("Share a song by a band that broke up too soon."));
+  assert.ok(pool.includes("Share a song by a band with relatives in it."));
+});
+
 test("includes letter, instrumental, and number title prompts", () => {
   const pool = getThemePool({ now: new Date("2026-05-04T09:00:00Z") });
 
@@ -81,6 +89,8 @@ test("exposes balanced categories instead of one flat weighted pool", () => {
   assert.equal(byId.year.count, 66);
   assert.equal(byId.letter.count, 26);
   assert.equal(byId.year.weight, 1);
+  assert.equal(byId.band.weight, 2);
+  assert.ok(byId.band.count >= 25);
   assert.equal(byId.situation.weight, 3);
   assert.ok(byId.situation.count >= 90);
   assert.ok(byId.mood.count >= 70);
