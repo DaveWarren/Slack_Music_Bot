@@ -1,11 +1,9 @@
 import { loadDotEnv } from "./dotenv.js";
 import { loadConfig } from "./config.js";
 import { dueSlot, nextCheckDelayMs, validateSchedule } from "./scheduler.js";
-import { readLastPost, writeLastPost } from "./stateStore.js";
-import { generateThemeChoice } from "./themeGenerator.js";
-import { formatThemeMessage } from "./messageFormatter.js";
-import { postMessage } from "./slackClient.js";
+import { readLastPost } from "./stateStore.js";
 import { startSlackInteractionServer } from "./slackInteractionServer.js";
+import { postTheme } from "./postTheme.js";
 
 await loadDotEnv();
 const config = loadConfig();
@@ -20,7 +18,7 @@ const server = process.argv.includes("--server");
 if (server) {
   startSlackInteractionServer(config);
 } else if (once) {
-  await postTheme("manual");
+  await postTheme(config, "manual");
 } else {
   console.log(
     `Music theme bot running: ${config.schedule.cadence} schedule for ${config.slackChannelId}`
@@ -37,7 +35,7 @@ async function tick() {
     if (slot) {
       const lastPost = await readLastPost(config.stateFile);
       if (lastPost?.slotKey !== slot.key) {
-        await postTheme(slot.key);
+        await postTheme(config, slot.key);
       }
     }
   } catch (error) {
@@ -45,54 +43,4 @@ async function tick() {
   } finally {
     setTimeout(tick, nextCheckDelayMs(new Date(), config.schedule));
   }
-}
-
-// Pick a theme using recent history, post it to Slack, and save the result.
-async function postTheme(slotKey) {
-  const previousState = await readLastPost(config.stateFile);
-
-  // Support both the current `history` shape and older state files with one theme.
-  const history =
-    previousState?.history ||
-    (previousState?.theme
-      ? [
-          {
-            theme: previousState.theme,
-            category: previousState.category,
-            postedAt: previousState.postedAt
-          }
-        ]
-      : []);
-
-  const choice = generateThemeChoice({
-    now: new Date(),
-    previousThemes: history.map((entry) => entry.theme),
-    previousCategories: history.map((entry) => entry.category).filter(Boolean)
-  });
-
-  const slackResponse = await postMessage({
-    token: config.slackBotToken,
-    channel: config.slackChannelId,
-    text: formatThemeMessage(choice.theme)
-  });
-
-  // Store a compact history so future runs can avoid repeated prompts/categories.
-  const postedAt = new Date().toISOString();
-  await writeLastPost(config.stateFile, {
-    slotKey,
-    theme: choice.theme,
-    category: choice.category,
-    slackTs: slackResponse.ts,
-    postedAt,
-    history: [
-      {
-        theme: choice.theme,
-        category: choice.category,
-        postedAt
-      },
-      ...history
-    ].slice(0, 90)
-  });
-
-  console.log(`Posted theme for ${slotKey} (${choice.category}): ${choice.theme}`);
 }

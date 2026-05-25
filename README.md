@@ -53,6 +53,188 @@ That is 09:00 UTC. For 09:00 London time during British Summer Time, change it t
 - cron: "0 8 * * *"
 ```
 
+## AWS Lambda
+
+If GitHub Actions is not available, run the same one-shot posting path in AWS Lambda and invoke it with EventBridge Scheduler.
+
+Recommended AWS shape:
+
+- **Lambda runtime:** Node.js 22.x
+- **Handler:** `src/lambda.handler`
+- **Trigger:** EventBridge Scheduler, for example `cron(0 9 * * ? *)`
+- **Scheduler time zone:** `Europe/London` if you want the trigger to follow UK clock changes
+- **State storage:** S3, using `STATE_FILE=s3://your-bucket/music-theme/last-post.json`
+- **Timeout:** 30 seconds is plenty for the Slack API call
+
+Create a deployment ZIP:
+
+```sh
+npm run lambda:zip
+```
+
+Set these Lambda environment variables:
+
+```env
+SLACK_BOT_TOKEN=xoxb-your-token
+SLACK_CHANNEL_ID=C0123456789
+STATE_FILE=s3://your-bucket/music-theme/last-post.json
+TZ=Europe/London
+```
+
+The Lambda execution role needs permission to read and write that S3 object:
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": ["s3:GetObject", "s3:PutObject"],
+      "Resource": "arn:aws:s3:::your-bucket/music-theme/last-post.json"
+    }
+  ]
+}
+```
+
+EventBridge should invoke the Lambda once per scheduled post. Do not run `npm start` in Lambda; that mode is a long-running local worker.
+
+### Step-by-step deployment
+
+1. Create an S3 bucket for state.
+
+   The bot uses one small JSON file to remember recent prompts. Create a private bucket such as `my-music-theme-bot-state`, then choose a key such as:
+
+   ```text
+   music-theme/last-post.json
+   ```
+
+   You do not need to upload the file first. The Lambda will create it on the first successful run.
+
+2. Create the Lambda execution role.
+
+   In IAM, create a role trusted by Lambda. Attach the basic Lambda logging policy:
+
+   ```text
+   AWSLambdaBasicExecutionRole
+   ```
+
+   Add this inline policy, replacing the bucket name and key:
+
+   ```json
+   {
+     "Version": "2012-10-17",
+     "Statement": [
+       {
+         "Effect": "Allow",
+         "Action": ["s3:GetObject", "s3:PutObject"],
+         "Resource": "arn:aws:s3:::my-music-theme-bot-state/music-theme/last-post.json"
+       }
+     ]
+   }
+   ```
+
+3. Build the deployment ZIP.
+
+   From this repo:
+
+   ```sh
+   npm run lambda:zip
+   ```
+
+   This creates `function.zip`.
+
+4. Create the Lambda function.
+
+   In AWS Lambda:
+
+   - Choose **Create function**
+   - Choose **Author from scratch**
+   - Runtime: **Node.js 22.x**
+   - Architecture: **arm64** is fine for this bot
+   - Execution role: choose the role from step 2
+   - Do not place the function in a VPC
+
+5. Upload the ZIP.
+
+   In the Lambda function code view, choose **Upload from** > **.zip file**, then upload `function.zip`.
+
+6. Configure the Lambda handler.
+
+   In **Runtime settings**, set:
+
+   ```text
+   src/lambda.handler
+   ```
+
+7. Set environment variables.
+
+   In **Configuration** > **Environment variables**, add:
+
+   ```env
+   SLACK_BOT_TOKEN=xoxb-your-token
+   SLACK_CHANNEL_ID=C0123456789
+   STATE_FILE=s3://my-music-theme-bot-state/music-theme/last-post.json
+   TZ=Europe/London
+   ```
+
+   Optional but useful:
+
+   ```env
+   NODE_OPTIONS=--enable-source-maps
+   ```
+
+8. Set runtime limits.
+
+   In **Configuration** > **General configuration**:
+
+   - Timeout: **30 seconds**
+   - Memory: **128 MB** is enough
+
+9. Test the Lambda manually.
+
+   Create a Lambda test event:
+
+   ```json
+   {
+     "slotKey": "manual-test"
+   }
+   ```
+
+   Run it once. It should post a theme to Slack and create the S3 state file.
+
+10. Create the schedule.
+
+   In EventBridge Scheduler:
+
+   - Choose **Create schedule**
+   - Schedule type: **Recurring schedule**
+   - Cron expression: `cron(0 9 * * ? *)`
+   - Time zone: `Europe/London`
+   - Flexible time window: **Off**
+   - Target: your Lambda function
+
+   The schedule input can be:
+
+   ```json
+   {}
+   ```
+
+   EventBridge includes a scheduled event time, and the Lambda uses that as duplicate protection.
+
+11. Keep retries modest.
+
+   In the schedule retry settings, a small retry count is fine. The Lambda skips duplicate scheduled events with the same event time, but if Slack is down, retries may post later once the original attempt succeeds.
+
+12. Check logs after the first scheduled run.
+
+   In CloudWatch Logs, look for:
+
+   ```text
+   Posted theme for ...
+   ```
+
+   If there is a failure, the most common causes are a missing Slack token, the bot not being invited to the Slack channel, or the Lambda role missing S3 permissions.
+
 ## Local Commands
 
 Post one theme immediately:
