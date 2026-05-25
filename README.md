@@ -280,4 +280,4 @@ Weekend/Friday prompts are only eligible on Fridays.
 
 ## App Icon
 
-Slack lets you upload an app icon in **Basic Information** > **Display Information**. This repo includes `assets/slack-app-icon.svg`; if Slack asks for a PNG, export it from the SVG and upload the PNG.
+Slack lets you upload an app icon in **Basic Information** > **Display Information**. This repo includes a ready-to-upload 512x512 PNG at `assets/slack-app-icon.png`, plus the source SVG at `assets/slack-app-icon.svg`.
